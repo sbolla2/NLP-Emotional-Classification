@@ -70,7 +70,7 @@ class WordEmbeddings:
     Wraps an Indexer and a list of 1-D numpy arrays where each position in the list is the vector for the corresponding
     word in the indexer. The 0 vector is returned if an unknown word is queried.
     """
-    def __init__(self, word_indexer, vectors):
+    def __init__(self, word_indexer: Indexer, vectors: np.array):
         self.word_indexer = word_indexer
         self.vectors = vectors
 
