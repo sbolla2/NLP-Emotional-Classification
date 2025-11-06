@@ -3,7 +3,7 @@ from typing import List
 import torch
 import torch.nn as nn
 from torch import optim
-from emotion_classifier import *
+from emotion_classifier import EmotionExample
 from utils import *
 import random
 import matplotlib.pyplot as plt
@@ -103,13 +103,13 @@ def train_CNN(args: Namespace, train_exs: List[EmotionExample], dev_exs: List[Em
 
     cnn.model.train()
 
-    optimizer = optim.Adam(cnn.model.parameters(), args.lr)
+    optimizer = optim.Adam(cnn.model.parameters(), args.lr, weight_decay=1e-4)
     loss_fn = nn.MSELoss()
     
     train_losses = []
     dev_losses = []
 
-    for epoch in range(10):
+    for epoch in range(args.num_epochs):
         random.shuffle(train_exs)
         total_loss = 0.0
         for i in range(0, len(train_exs), args.batch_size):
@@ -119,13 +119,21 @@ def train_CNN(args: Namespace, train_exs: List[EmotionExample], dev_exs: List[Em
 
             for example in batch:
                 ex_indices = []
-                for ex_word in example.words:
+                for ex_word in example.tokens:
                     ex_word_idx = word_embeddings.word_indexer.index_of(ex_word)
                     if ex_word_idx == -1:
                         ex_word_idx = word_embeddings.word_indexer.index_of("UNK")
                     ex_indices.append(ex_word_idx)
                 sentences.append(ex_indices)
-                labels.append(example.label)
+                
+                if target == "EMPATHY":
+                    label = example.empathy
+                elif target == "POLARITY":
+                    label = example.emotional_polarity
+                else:
+                    label = example.emotional_intensity
+
+                labels.append(label)
 
             max_sentence_length = max(len(sentence) for sentence in sentences)
             padded_sentences = torch.LongTensor([sentence + [0] * (max_sentence_length - len(sentence)) for sentence in sentences])
@@ -153,13 +161,23 @@ def train_CNN(args: Namespace, train_exs: List[EmotionExample], dev_exs: List[Em
 
                 for example in batch:
                     ex_indices = []
-                    for ex_word in example.words:
+                    for ex_word in example.tokens:
                         ex_word_idx = word_embeddings.word_indexer.index_of(ex_word)
                         if ex_word_idx == -1:
                             ex_word_idx = word_embeddings.word_indexer.index_of("UNK")
                         ex_indices.append(ex_word_idx)
                     sentences.append(ex_indices)
-                    labels.append(example.label)
+
+                    if target == "EMPATHY":
+                        label = example.empathy
+                    elif target == "POLARITY":
+                        label = example.emotional_polarity
+                    else:
+                        label = example.emotional_intensity
+
+                    labels.append(label)
+
+                    
 
                 max_sentence_length = max(len(sentence) for sentence in sentences)
                 padded_sentences = torch.LongTensor([sentence + [0] * (max_sentence_length - len(sentence)) for sentence in sentences])
