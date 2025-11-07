@@ -19,9 +19,12 @@ def parse_args():
     parser.add_argument('--target', type=str, default='EMPATHY', help='target to predict (EMPATHY, POLARITY, or INTENSITY)')
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
     parser.add_argument('--num_epochs', type=int, default=10, help='number of epochs to train for')
-    parser.add_argument('--num_filters', type=int, default=100, help='number of filters for CNN')
+    parser.add_argument('--hidden_dim', type=int, default=100, help='number of hidden dimensions for N-Grams or filters for CNN')
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout for CNN')
     parser.add_argument('--batch_size', type=int, default=50, help='training batch size; 50 by default')
+    parser.add_argument('--n_grams', type=int, default=3, help='no. of n-grams')
+    parser.add_argument('--max_sequence_len', type=int, default=50, help='max sequence length for n-grams')
+    parser.add_argument('--weight_decay', type=float, default=1e-4, help='weight decay for optimizer')
 
     # paths to data
     parser.add_argument('--train_path', type=str, default="data/trac2_CONVT_train.csv", help='model training data')

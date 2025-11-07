@@ -99,12 +99,12 @@ def train_CNN(args: Namespace, train_exs: List[EmotionExample], dev_exs: List[Em
     :return: A trained EmotionClassifierCNN model
     """
 
-    cnn = EmotionClassifierCNN(word_embeddings, args.num_filters, args.dropout, args.batch_size)
+    cnn = EmotionClassifierCNN(word_embeddings, args.hidden_dim, args.dropout, args.batch_size)
 
     cnn.model.train()
 
-    optimizer = optim.Adam(cnn.model.parameters(), args.lr, weight_decay=1e-4)
-    loss_fn = nn.MSELoss()
+    optimizer = optim.AdamW(cnn.model.parameters(), args.lr, weight_decay=args.weight_decay)
+    loss_fn = nn.SmoothL1Loss()
     
     train_losses = []
     dev_losses = []
