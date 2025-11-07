@@ -80,12 +80,11 @@ def create_batches(train_exs: List[EmotionExample], indexer: Indexer, batch_size
     return batches
 
 class Ngram(nn.Module):
-    def __init__(self, embedding_dim: int, embedding_layer: nn.Embedding, num_embeddings: int, hidden_dim: int, n: int, dropout: float):
+    def __init__(self, embedding_dim: int, embedding_layer: nn.Embedding, hidden_dim: int, n: int, dropout: float):
         super(Ngram, self).__init__()
         self.n = n
 
         self.embedding_dim = embedding_dim
-        self.num_embeddings = num_embeddings
 
         self.embedding_layer = embedding_layer
         self.hidden_dim = hidden_dim
@@ -107,28 +106,48 @@ class Ngram(nn.Module):
     
 
 class EmotionClassifierNgram(object):
-    def __init__(self, word_embeddings: WordEmbeddings,  indexer: Indexer, hidden_dim: int, n: int, dropout: float) -> None:
+    def __init__(self, word_embeddings: WordEmbeddings, indexer: Indexer, hidden_dim: int, n: int, dropout: float, max_len: int, batch_size: int) -> None:
         self.word_embeddings = word_embeddings
         self.embedding_layer = word_embeddings.get_initialized_embedding_layer(frozen=False)
 
-        self.model = Ngram(word_embeddings.get_embedding_length(), self.embedding_layer, len(indexer), hidden_dim, n, dropout)
+        self.model = Ngram(word_embeddings.get_embedding_length(), self.embedding_layer, hidden_dim, n, dropout)
 
         self.indexer = indexer
         self.n = n
 
+        self.max_len = max_len
+        self.batch_size = batch_size
+
+    '''
     def predict(self, ex_words):
         with torch.no_grad():
             n_grams = create_ngrams(ex_words, self.n)
             index_tensor = ngram_to_index_tensors(n_grams, self.indexer, False)
             x = torch.tensor(index_tensor, dtype=torch.long).unsqueeze(0)
             return self.model.forward(x).item()
+    '''
         
-    def predict_all(self, all_ex_words: List[List[str]]):
+    def predict_all(self, all_ex_words: List[List[str]]) -> List[float]:
+        self.model.eval()
+        predictions = []
         with torch.no_grad():
-            all_n_grams = list(map(lambda sentence: create_ngrams(sentence, self.n), all_ex_words))
-            index_batch = torch.tensor(map(lambda n_grams: ngram_to_index_tensors(n_grams, False), all_n_grams))
+            for i in range(0, len(all_ex_words), self.batch_size):
+                batch = all_ex_words[i:i+self.batch_size]
+                batch_indices = []
 
-            return self.model.forward(index_batch).tolist()
+                for example in batch:
+                    n_grams = create_ngrams(example, self.n)
+                    indices = ngram_to_index_tensors(n_grams, self.indexer, False)
+                    batch_indices.append(indices)
+
+                padded_batch = [indices + [0]*(self.max_len - len(indices)) for indices in batch_indices]
+
+                batch_tensor = torch.tensor(padded_batch, dtype=torch.long)
+                outputs = self.model.forward(batch_tensor)
+                predictions.extend(outputs.squeeze(1).tolist())
+
+        return predictions
+
 
 
 def train_ngram_network(args: Namespace, train_exs: List[EmotionExample], dev_exs: List[EmotionExample],
@@ -137,15 +156,14 @@ def train_ngram_network(args: Namespace, train_exs: List[EmotionExample], dev_ex
     indexer = Indexer()
 
     # build vocabulary
-    for ex in train_exs:
-        for token in ex.tokens:
-            indexer.add_and_get_index(token, add=True)
+    indexer = word_embeddings.word_indexer
 
-    ffnn = EmotionClassifierNgram(word_embeddings, indexer, args.hidden_dim, args.n_grams, args.dropout)
+    max_len = max(len(ngram_to_index_tensors(create_ngrams(ex.tokens, args.n_grams), indexer, False)) for ex in train_exs)
+    ffnn = EmotionClassifierNgram(word_embeddings, indexer, args.hidden_dim, args.n_grams, args.dropout, max_len, args.batch_size)
     
     # define our loss function and separate data into batches
     loss_fn = nn.SmoothL1Loss()
-    batches = create_batches(train_exs, indexer, args.batch_size, args.max_sequence_len, args.n_grams, target)
+    batches = create_batches(train_exs, indexer, args.batch_size, max_len, args.n_grams, target)
 
     ffnn.model.train()
     optimizer = optim.AdamW(ffnn.model.parameters(), args.lr, weight_decay=args.weight_decay)

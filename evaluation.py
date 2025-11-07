@@ -1,5 +1,6 @@
 import argparse
 from models.cnn import train_CNN
+from models.ngram import train_ngram_network
 from typing import List
 from scipy.stats import pearsonr
 from emotion_classifier import EmotionExample
@@ -23,7 +24,6 @@ def parse_args():
     parser.add_argument('--dropout', type=float, default=0.5, help='dropout for CNN')
     parser.add_argument('--batch_size', type=int, default=50, help='training batch size; 50 by default')
     parser.add_argument('--n_grams', type=int, default=3, help='no. of n-grams')
-    parser.add_argument('--max_sequence_len', type=int, default=50, help='max sequence length for n-grams')
     parser.add_argument('--weight_decay', type=float, default=1e-4, help='weight decay for optimizer')
 
     # paths to data
@@ -152,14 +152,14 @@ if __name__ == '__main__':
 
     word_embeddings = read_word_embeddings(args.embeddings_path)
 
-    cnn_model = train_CNN(args, train_exs, dev_exs, word_embeddings, args.target)
+    if args.model == 'CNN':
+        model = train_CNN(args, train_exs, dev_exs, word_embeddings, args.target)
+    else:
+        model = train_ngram_network(args, train_exs, dev_exs, word_embeddings, args.target)
     
-    print("Pearson Correlation for Train Set:")
-    train_corr = evaluate(cnn_model, train_exs, args.target)
+    print("\nPearson Correlation for Train Set:")
+    train_corr = evaluate(model, train_exs, args.target)
     print("\nPearson Correlation for Dev Set:")
-    dev_corr = evaluate(cnn_model, dev_exs, args.target)
+    dev_corr = evaluate(model, dev_exs, args.target)
     print("\nPearson Correlation for Test Set:")
-    test_corr = evaluate(cnn_model, test_exs, args.target)
-
-    average_corr = (train_corr + dev_corr + test_corr) / 3
-    print(f"\nAverage Pearson Correlation across Train, Dev, and Test: {average_corr:.4f}")
+    test_corr = evaluate(model, test_exs, args.target)

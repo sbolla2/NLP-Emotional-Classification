@@ -57,7 +57,7 @@ class EmotionClassifierCNN(object):
         self.model = CNN(word_embeddings.get_embedding_length(), num_filters, dropout)
         self.batch_size = batch_size
 
-    def predict_all(self, all_ex_words: List[List[str]]) -> List[int]:
+    def predict_all(self, all_ex_words: List[List[str]]) -> List[float]:
         """
         Return a list of model predictions using the trained CNN
         """
