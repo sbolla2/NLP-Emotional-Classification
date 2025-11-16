@@ -1,4 +1,7 @@
 import argparse
+
+import numpy as np
+
 from models.cnn import train_CNN
 from models.ngram import train_ngram_network
 from typing import List
@@ -92,6 +95,30 @@ def evaluate(model, exs: List[EmotionExample], target: str):
     pearson_corr = pearsonr(true_labels, preds)[0]
     print(f"Pearson correlation on {target}: {pearson_corr:.4f}")
     return pearson_corr
+
+def evaluate_mse(model, exs: List[EmotionExample], target: str):
+    # Extract the list of token lists from the examples
+    all_tokens = [ex.tokens for ex in exs]
+
+    # Get predictions (a list of floats)
+    preds = model.predict_all(all_tokens)
+
+
+    # Extract true labels based on target
+    if target == "EMPATHY":
+        true_labels = [ex.empathy for ex in exs]
+    elif target == "POLARITY":
+        true_labels = [ex.emotional_polarity for ex in exs]
+    elif target == "INTENSITY":
+        true_labels = [ex.emotional_intensity for ex in exs]
+    else:
+        raise ValueError(f"Unknown target {target}")
+
+    squared_errors = np.square(np.array(true_labels) - np.array(preds))
+    mse = np.mean(squared_errors).item()
+
+    print(f"Mean squared error on {target}: {mse:.4f}")
+    return mse
 
 def relativize(file, outfile, word_counter):
     """
