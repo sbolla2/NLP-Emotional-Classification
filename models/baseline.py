@@ -4,6 +4,7 @@ from torch import nn
 from argparse import Namespace
 
 import evaluation
+import utils
 from emotion_classifier import EmotionExample
 from utils import WordEmbeddings
 import numpy as np
@@ -38,6 +39,14 @@ def train_baseline(train_exs: List[EmotionExample], dev_exs: List[EmotionExample
     polarity_mse = evaluation.evaluate_mse(polarity_model, dev_exs, "POLARITY")
     empathy_mse = evaluation.evaluate_mse(empathy_model, dev_exs, "EMPATHY")
 
+    utils.save_model(intensity_model, "baseline/intensity")
+    utils.save_model(polarity_model, "baseline/polarity")
+    utils.save_model(empathy_model, "baseline/empathy")
+
 train_ex = evaluation.parse_dataset("../data/trac2_CONVT_train.csv", "BASE")
 dev_ex = evaluation.parse_dataset("../data/trac2_CONVT_dev.csv", "BASE")
 train_baseline(train_ex, dev_ex)
+
+# an example of loading a saved model
+#model = utils.load_model("baseline/empathy")
+#print(model.forward(33))

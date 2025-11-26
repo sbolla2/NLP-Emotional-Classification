@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import os
 
 class Indexer(object):
     """
@@ -129,3 +130,23 @@ def read_word_embeddings(embeddings_file: str) -> WordEmbeddings:
     print("Read in " + repr(len(word_indexer)) + " vectors of size " + repr(vectors[0].shape[0]))
     # Turn vectors into a 2-D numpy array
     return WordEmbeddings(word_indexer, np.array(vectors))
+
+#saved_model_path = "savedModels/"
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# Create path relative to the script location
+saved_model_path = os.path.join(script_dir, "savedModels/")
+
+def save_model(model: torch.nn.Module, model_name: str):
+    parent_dir = os.path.join(saved_model_path + model_name + ".pt")
+    os.makedirs(os.path.dirname(parent_dir), exist_ok=True)
+    torch.save(model, parent_dir)
+
+def load_model(model_name) -> torch.nn.Module | None:
+    try:
+        parent_dir = os.path.join(saved_model_path + model_name + ".pt")
+        model = torch.load(parent_dir, weights_only=False)
+        model.eval()
+        return model
+    except FileNotFoundError:
+        return None
