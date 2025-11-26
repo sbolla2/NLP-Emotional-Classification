@@ -4,6 +4,7 @@ import numpy as np
 
 from models.cnn import train_CNN
 from models.ngram import train_ngram_network
+from models.transformer import train_BERT
 from typing import List
 from scipy.stats import pearsonr
 from emotion_classifier import EmotionExample
@@ -179,7 +180,9 @@ if __name__ == '__main__':
 
     word_embeddings = read_word_embeddings(args.embeddings_path)
 
-    if args.model == 'CNN':
+    if args.model == 'BERT':
+        model = train_BERT(args, train_exs, dev_exs, args.target)
+    elif args.model == 'CNN':
         model = train_CNN(args, train_exs, dev_exs, word_embeddings, args.target)
     else:
         model = train_ngram_network(args, train_exs, dev_exs, word_embeddings, args.target)
