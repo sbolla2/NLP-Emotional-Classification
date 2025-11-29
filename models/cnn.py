@@ -105,9 +105,6 @@ def train_CNN(args: Namespace, train_exs: List[EmotionExample], dev_exs: List[Em
 
     optimizer = optim.AdamW(cnn.model.parameters(), args.lr, weight_decay=args.weight_decay)
     loss_fn = nn.SmoothL1Loss()
-    
-    train_losses = []
-    dev_losses = []
 
     for epoch in range(args.num_epochs):
         random.shuffle(train_exs)
@@ -149,58 +146,6 @@ def train_CNN(args: Namespace, train_exs: List[EmotionExample], dev_exs: List[Em
             loss.backward()
             optimizer.step()
 
-        train_losses.append(total_loss)
-
-        cnn.model.eval()
-        dev_loss = 0.0
-        with torch.no_grad():
-            for i in range(0, len(dev_exs), args.batch_size):
-                batch = dev_exs[i:i+args.batch_size]
-                sentences = []
-                labels = []
-
-                for example in batch:
-                    ex_indices = []
-                    for ex_word in example.tokens:
-                        ex_word_idx = word_embeddings.word_indexer.index_of(ex_word)
-                        if ex_word_idx == -1:
-                            ex_word_idx = word_embeddings.word_indexer.index_of("UNK")
-                        ex_indices.append(ex_word_idx)
-                    sentences.append(ex_indices)
-
-                    if target == "EMPATHY":
-                        label = example.empathy
-                    elif target == "POLARITY":
-                        label = example.emotional_polarity
-                    else:
-                        label = example.emotional_intensity
-
-                    labels.append(label)
-
-                    
-
-                max_sentence_length = max(len(sentence) for sentence in sentences)
-                padded_sentences = torch.LongTensor([sentence + [0] * (max_sentence_length - len(sentence)) for sentence in sentences])
-                labels = torch.FloatTensor(labels)
-                embeddings = cnn.embedding_layer(padded_sentences)
-
-                outputs = cnn.model.forward(embeddings.permute(0, 2, 1)).squeeze(1)
-
-                loss = loss_fn(outputs, labels)
-                dev_loss += loss.item()
-
-        dev_losses.append(dev_loss)
-        cnn.model.train()
-
         print("Total loss on epoch %i: %f" % (epoch + 1, total_loss))
-    
-    plt.plot(range(1, args.num_epochs+1), train_losses, label="Train Loss")
-    plt.plot(range(1, args.num_epochs+1), dev_losses, label="Dev Loss")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-
-    plt.title(target + " CNN Training vs Dev Loss")
-    plt.legend()
-    plt.show()
 
     return cnn

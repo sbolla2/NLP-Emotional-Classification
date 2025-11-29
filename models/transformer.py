@@ -129,13 +129,10 @@ def train_BERT(args: Namespace, train_exs: List[EmotionExample], dev_exs: List[E
 
     # Loss Function: using SmoothL1Loss (Huber loss) which is robust to outliers
     loss_fn = nn.SmoothL1Loss()
-    train_losses = []
-    dev_losses = []
 
     for epoch in range(args.num_epochs):
         random.shuffle(train_exs)
         total_loss = 0.0
-        classifier.model.train()
 
         for i in range(0, len(train_exs), args.batch_size):
             batch = train_exs[i:i+args.batch_size]
@@ -173,49 +170,6 @@ def train_BERT(args: Namespace, train_exs: List[EmotionExample], dev_exs: List[E
             torch.nn.utils.clip_grad_norm_(classifier.model.parameters(), max_norm=1.0)
 
             optimizer.step()
-        
-        train_losses.append(total_loss)
-
-        # evaluating on dev set
-        classifier.model.eval()
-        dev_loss = 0.0
-
-        with torch.no_grad():
-            for i in range(0, len(dev_exs), args.batch_size):
-                batch = dev_exs[i:i+args.batch_size]
-                sentences = [' '.join(ex.tokens) for ex in batch]
-
-                if target == "EMPATHY":
-                    labels = torch.FloatTensor([ex.empathy for ex in batch])
-                elif target == "POLARITY":
-                    labels = torch.FloatTensor([ex.emotional_polarity for ex in batch])
-                else:
-                    labels = torch.FloatTensor([ex.emotional_intensity for ex in batch])
-
-                encoded = classifier.tokenizer(
-                    sentences,
-                    padding=True,
-                    truncation=True,
-                    max_length=512,
-                    return_tensors='pt'
-                )
-
-                predictions = classifier.model(encoded['input_ids'], encoded['attention_mask'])
-                loss = loss_fn(predictions, labels)
-                dev_loss += loss.item()
-        
-        dev_losses.append(dev_loss)
-        print(f"Epoch {epoch + 1}/{args.num_epochs} - Train Loss: {total_loss:.4f}, Dev Loss: {dev_loss:.4f}")
-
-    # plotting training curves
-    plt.figure(figsize=(10,6))
-    plt.plot(range(1, args.num_epochs + 1), train_losses, label="Train Loss", marker="o")
-    plt.plot(range(1, args.num_epochs + 1), dev_losses, label="Dev Loss", marker="x")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.title(f"BERT - {target} Training vs Dev Loss")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.show()
+        print(f"Epoch {epoch + 1}/{args.num_epochs} - Train Loss: {total_loss:.4f}")
 
     return classifier
