@@ -138,11 +138,26 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 saved_model_path = os.path.join(script_dir, "savedModels/")
 
 def save_model(model: torch.nn.Module, model_name: str):
+    """
+    Saves the given pytorch file to savedModes/model_name
+
+    Args:
+        model: The torch.nn.Module to save
+        model_name: The name to use as the filename of this model
+    """
     parent_dir = os.path.join(saved_model_path + model_name + ".pt")
     os.makedirs(os.path.dirname(parent_dir), exist_ok=True)
     torch.save(model, parent_dir)
 
 def load_model(model_name) -> torch.nn.Module | None:
+    """
+    Loads a model saved on disc. Looks for the model in savedModels/model_name
+
+    Args:
+        model_name: The filename of the model to load
+
+    Returns: The loaded torch.nn.Module. None if no model is found
+    """
     try:
         parent_dir = os.path.join(saved_model_path + model_name + ".pt")
         model = torch.load(parent_dir, weights_only=False)

@@ -86,8 +86,10 @@ def bar_graphs(pearsons: List[float], model_names: Optional[List[str]] = None):
     plt.tight_layout()
     plt.show()
 
-# run to see what the models look like
 def test_visualizations():
+    """
+     run to see what the visualizations look like
+    """
     random_predictions = np.random.random(100)
     random_gold_labels = np.random.random(100)
     scatter(random_predictions, random_gold_labels,True, "Test Model")

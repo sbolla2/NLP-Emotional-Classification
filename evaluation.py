@@ -1,7 +1,4 @@
 import argparse
-
-import numpy as np
-
 from models.cnn import train_CNN
 from models.ngram import train_ngram_network
 from models.transformer import train_BERT
@@ -19,6 +16,9 @@ tokenizer = spacy.load("en_core_web_sm")
 transformer_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
 
 def parse_args():
+    """
+    Defines and parses the command line arguments
+    """
     parser = argparse.ArgumentParser(description='trainer.py')
     parser.add_argument('--model', type=str, default='CNN', help='model to run (NGRAM, CNN, or BERT)')
     parser.add_argument('--target', type=str, default='EMPATHY', help='target to predict (EMPATHY, POLARITY, or INTENSITY)')
@@ -77,6 +77,17 @@ def parse_dataset(data_path: str, model: str):
     return emotion_examples
 
 def evaluate(model, exs: List[EmotionExample], target: str):
+    """
+    Calculates the Pearson correlation of the model's predictions on the given examples on the given target
+
+    Args:
+        model: The model to check the predictions of. Should have a predict_all function
+        exs: A list of examples to use in calculating the Pearson correlation
+        target: The target to predict (EMPATHY. INTENSITY, POLARITY)
+
+    Returns: the pearson correlation of the model's predictions as a float
+    """
+
     # Extract the list of token lists from the examples
     all_tokens = [ex.tokens for ex in exs]
 
@@ -98,6 +109,16 @@ def evaluate(model, exs: List[EmotionExample], target: str):
     return pearson_corr
 
 def evaluate_mse(model, exs: List[EmotionExample], target: str):
+    """
+    Calculates the mean squared error of the model's predictions on the given examples
+
+    Args:
+        model: The model to calculate the mean squared error of
+        exs: A list of examples to use in the calculation of mean squared error
+        target: The target to predict (EMPATHY. INTENSITY, POLARITY)
+
+    Returns: The mean squared error of the model on the given dataset
+    """
     # Extract the list of token lists from the examples
     all_tokens = [ex.tokens for ex in exs]
 

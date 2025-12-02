@@ -80,6 +80,9 @@ def create_batches(train_exs: List[EmotionExample], indexer: Indexer, batch_size
     return batches
 
 class Ngram(nn.Module):
+    """
+    A deep averaging neural network using ngram features
+    """
     def __init__(self, embedding_dim: int, embedding_layer: nn.Embedding, hidden_dim: int, n: int, dropout: float):
         super(Ngram, self).__init__()
         self.n = n
@@ -99,13 +102,16 @@ class Ngram(nn.Module):
 
     def forward(self, x):
         embeddings = self.embedding_layer(x)
-        # taking the average to use in DAN...could instead classify each n-gram seperately and average the result. Thinking on it...
+        # taking the average to use in DAN
         average_embedding = torch.mean(embeddings, dim = 1)
 
         return self.model(average_embedding)
     
 
 class EmotionClassifierNgram(object):
+    """
+    Wrapper class for ngram model
+    """
     def __init__(self, word_embeddings: WordEmbeddings, indexer: Indexer, hidden_dim: int, n: int, dropout: float, max_len: int, batch_size: int) -> None:
         self.word_embeddings = word_embeddings
         self.embedding_layer = word_embeddings.get_initialized_embedding_layer(frozen=False)
@@ -118,16 +124,34 @@ class EmotionClassifierNgram(object):
         self.max_len = max_len
         self.batch_size = batch_size
 
-    '''
+
     def predict(self, ex_words):
+        """
+        Predicts the target this model was trained on for the given example
+
+        Args:
+            ex_words: An EmotionExample to classify.
+
+        Returns: a float prediction of this examples score in the trained on target
+        """
         with torch.no_grad():
             n_grams = create_ngrams(ex_words, self.n)
             index_tensor = ngram_to_index_tensors(n_grams, self.indexer, False)
             x = torch.tensor(index_tensor, dtype=torch.long).unsqueeze(0)
             return self.model.forward(x).item()
-    '''
+
         
     def predict_all(self, all_ex_words: List[List[str]]) -> List[float]:
+        """
+        Predicts the target this model was trained on for all the given examples
+
+        Args:
+            all_ex_words: A list of EmotionExample objects to classify
+
+        Returns: A list of floats where each flot represents the prediction for the EmotionExample at the
+        same index in the input list.
+
+        """
         self.model.eval()
         predictions = []
         with torch.no_grad():
@@ -152,8 +176,19 @@ class EmotionClassifierNgram(object):
 
 def train_ngram_network(args: Namespace, train_exs: List[EmotionExample], dev_exs: List[EmotionExample],
                         word_embeddings: WordEmbeddings, target: str):
-    #ffnn = Ngram(args.n_grams)
-    indexer = Indexer()
+    """
+    Trains a deep averaging n-gram model to predict the given target.
+
+    Args:
+        args: command line arguments
+        train_exs: List of EmotionExample training examples
+        dev_exs: List of EmotionExamples to use for evaluation
+        word_embeddings: Word embeddings to use as the starting point in training
+        target: Which of the three targets this model should be trained to predict
+
+    Returns: A trained EmotionClassifierNgram model
+
+    """
 
     # build vocabulary
     indexer = word_embeddings.word_indexer

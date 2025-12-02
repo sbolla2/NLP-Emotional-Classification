@@ -6,7 +6,6 @@ from typing import List
 from argparse import Namespace
 from emotion_classifier import EmotionExample
 import random
-import matplotlib.pyplot as plt
 
 random.seed(42)
 torch.manual_seed(42)

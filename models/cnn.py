@@ -1,12 +1,10 @@
 from argparse import Namespace
 from typing import List
-import torch
 import torch.nn as nn
 from torch import optim
 from emotion_classifier import EmotionExample
 from utils import *
 import random
-import matplotlib.pyplot as plt
 
 random.seed(42)
 np.random.seed(42)
