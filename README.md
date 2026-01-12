@@ -1,4 +1,7 @@
 # NLP Empathy Detection and Emotional Classification
+
+### Our Technical Report on our findings and process: [Technical Report](Technical_Report.pdf)
+
 NLP Project modeling, investigating, and comparing the capturing of empathy, emotional polarity, and emotional intensity within text
 
 This project is a solution to the second track of WASSA 2024 Shared Task on Empathy Detection and Emotion Classification and
